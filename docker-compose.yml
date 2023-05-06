@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+  pg-github-bot:
+    image: postgres
+    environment:
+      POSTGRES_DB: "github-releases-bot"
+      POSTGRES_USER: "github-bot"
+      POSTGRES_PASSWORD: "123qwe123qwe"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U github-bot -d github-releases-bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+    networks:
+      - github-bot
+
+networks:
+  github-bot:
+    driver: bridge

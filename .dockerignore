@@ -1,0 +1,4 @@
+configs
+pgdata
+docker-compose.yml
+github-releases-bot
