@@ -15,4 +15,4 @@ RUN apt-get update && \
     rm -rf /var/cache/apt/
 COPY --from=build /app/github-releases-bot .
 
-CMD ["/github-releases-bot"]
+ENTRYPOINT ["/github-releases-bot"]
