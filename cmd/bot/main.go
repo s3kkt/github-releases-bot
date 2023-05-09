@@ -1,33 +1,26 @@
 package main
 
 import (
+	"fmt"
 	"github.com/s3kkt/github-releases-bot/internal/config"
-	"github.com/s3kkt/github-releases-bot/internal/database"
-	"github.com/s3kkt/github-releases-bot/internal/telegram"
-	"os"
-)
-
-var (
-	configPath = config.ParseFlags()
-	db         = config.DatabaseConnectionString(configPath)
-	conf       = config.GetConfig(configPath)
+	"github.com/s3kkt/github-releases-bot/internal/repository"
+	"github.com/s3kkt/github-releases-bot/internal/transport"
+	"time"
 )
 
 func main() {
-	err := os.Setenv("DB_CONNECTION_STRING", db)
-	if err != nil {
-		return
+	configPath := config.ParseFlags()
+	conf := config.GetConfig(configPath)
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		conf.Database.Username, conf.Database.Password, conf.Database.Host, conf.Database.Port, conf.Database.DBName)
+
+	repository.CheckDatabaseConnection(connectionString)
+
+	for _, v := range conf.RepoUrl {
+		release := transport.GetReleases(config.GetApiURL(v), conf.GitHubToken)
+		check_time := time.Now().Format(time.RFC3339)
+
+		repository.InsertRepoFromConfig(connectionString, v)
+		repository.InsertReleaseData(connectionString, check_time, v, release)
 	}
-
-	database.CheckDatabaseConnection()
-	database.Cleanup(conf)
-
-	for _, r := range conf.RepoUrl {
-		database.AddRepo(r, true, 0)
-	}
-
-	//go database.Updater(conf)
-	go telegram.Notifier(conf)
-
-	telegram.Bot(conf)
 }
