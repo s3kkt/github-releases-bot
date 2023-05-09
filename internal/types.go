@@ -38,19 +38,3 @@ type APIError struct {
 	Message          string `json:"message"`
 	DocumentationUrl string `json:"documentation_url"`
 }
-
-//newRelease["RepoName"] = repoName
-//newRelease["Author"] = author
-//newRelease["Tag"] = tagName
-//newRelease["ReleaseURL"] = releaseUrl
-//newRelease["Branch"] = targetBranch
-//newRelease["Date"] = publishedAt.String()
-
-type NewRelease struct {
-	RepoName   string
-	Author     string
-	Tag        string
-	ReleaseURL string
-	Branch     string
-	Date       string
-}

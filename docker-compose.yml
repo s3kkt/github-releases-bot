@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  db:
+  database:
     image: postgres
     environment:
       POSTGRES_DB: "github-releases-bot"
@@ -23,8 +23,8 @@ services:
         limits:
           cpus: '1'
           memory: 4G
-#    networks:
-#      - github-bot
+    networks:
+      - github-bot
 
   app:
     image: s3kkt/github-releases-bot
@@ -32,12 +32,13 @@ services:
       context: .
     volumes:
       - ./configs:/etc/github-bot
-    #entrypoint: ""
-    #command: tail -f /dev/null
-    command: '-config="/etc/github-bot/config.yml"'
-#    networks:
-#      - github-bot
+    depends_on:
+      - database
+    command: -config="/etc/github-bot/config.yml"
+    tty: true
+    networks:
+      - github-bot
 
-#networks:
-#  github-bot:
-#    driver: bridge
+networks:
+  github-bot:
+    driver: bridge

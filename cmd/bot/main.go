@@ -9,25 +9,22 @@ import (
 
 var (
 	configPath = config.ParseFlags()
-	db         = config.DatabaseConnectionString(configPath)
+	dbString   = config.DatabaseConnectionString(configPath)
 	conf       = config.GetConfig(configPath)
 )
 
 func main() {
-	err := os.Setenv("DB_CONNECTION_STRING", db)
+
+	//m, err := migrate.New()
+	//m.steps(2)
+
+	err := os.Setenv("DB_CONNECTION_STRING", dbString)
 	if err != nil {
 		return
 	}
 
 	database.CheckDatabaseConnection()
-	database.Cleanup(conf)
 
-	for _, r := range conf.RepoUrl {
-		database.AddRepo(r, true, 0)
-	}
-
-	//go database.Updater(conf)
 	go telegram.Notifier(conf)
-
 	telegram.Bot(conf)
 }
