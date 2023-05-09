@@ -3,16 +3,18 @@ package internal
 import "time"
 
 type Config struct {
-	Database struct {
+	GitHubToken    string   `yaml:"github_token"`
+	TelegramToken  string   `yaml:"telegram_token"`
+	Debug          bool     `yaml:"debug"`
+	UpdateInterval string   `yaml:"update_interval"`
+	RepoUrl        []string `yaml:"repos"`
+	Database       struct {
 		Username string `yaml:"user"`
 		Password string `yaml:"pass"`
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
 		DBName   string `yaml:"dbname"`
 	} `yaml:"database"`
-
-	GitHubToken string   `yaml:"github_token"`
-	RepoUrl     []string `yaml:"repos"`
 }
 
 type Release struct {
@@ -30,4 +32,9 @@ type Release struct {
 	Author          struct {
 		Login string `json:"login"`
 	} `json:"author"`
+}
+
+type APIError struct {
+	Message          string `json:"message"`
+	DocumentationUrl string `json:"documentation_url"`
 }
