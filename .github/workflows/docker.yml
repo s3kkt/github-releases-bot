@@ -1,9 +1,13 @@
 name: Github Bot build
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - 'main'
 
 jobs:
   build-docker-image:
+    name: 'Build docker image'
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU

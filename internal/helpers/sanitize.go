@@ -7,6 +7,9 @@ import (
 )
 
 func ReposListOutput(reposList []string) string {
+	if len(reposList) == 0 {
+		return "There is no repos at this moment."
+	}
 	return strings.Join(reposList, "\n")
 }
 
@@ -41,5 +44,9 @@ func SanitizeReleaseNotes(releaseNotes string) string {
 		}
 		releaseNotes = re.ReplaceAllString(releaseNotes, "")
 	}
+	if len(releaseNotes) > 300 {
+		return releaseNotes[:300] + "\n...\n"
+	}
+
 	return releaseNotes
 }

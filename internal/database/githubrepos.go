@@ -4,11 +4,36 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/s3kkt/github-releases-bot/internal"
 	"log"
 	"os"
 )
+
+func Migrate() error {
+	db, err := sql.Open("postgres", os.Getenv("DB_CONNECTION_STRING"))
+	if err != nil {
+		return err
+	}
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://internal/database/migrations",
+		"postgres", driver)
+	if err != nil {
+		return err
+	}
+
+	err = m.Up()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func CheckDatabaseConnection() bool {
 	connectionString := os.Getenv("DB_CONNECTION_STRING")
@@ -26,11 +51,32 @@ func CheckDatabaseConnection() bool {
 	return true
 }
 
-func AddRepo(repo string, chatId int64) {
+func UpdateChat(chatId int64, userName, firstName, lastName, chatType string, isBot bool, date int64) error {
 	connectionString := os.Getenv("DB_CONNECTION_STRING")
 
-	log.Printf("DEBUG: %s", repo)
-	log.Printf("DEBUG: %d", chatId)
+	db, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatal("Database chat update failed. Reason: ", err)
+	}
+
+	sqlStatement := `
+	INSERT INTO chats (chat_id, username, first_name, last_name, type, is_bot, last_activity)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (chat_id, username) DO UPDATE SET last_activity = $7;`
+
+	_, err = db.Exec(sqlStatement, chatId, userName, firstName, lastName, chatType, isBot, date)
+	log.Printf("Updating chat: %d.", chatId)
+	if err != nil {
+		log.Printf("Database chat update failed. ChatID: %d Reason: %s", chatId, err)
+	}
+
+	defer db.Close()
+
+	return err
+}
+
+func AddRepo(repo string, chatId int64) {
+	connectionString := os.Getenv("DB_CONNECTION_STRING")
 
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
@@ -74,10 +120,13 @@ func DeleteRepo(repo string, chatId int64) error {
 	return nil
 }
 
-func GetReposList() (error, []string) {
+func GetChatsList() (error, []int64) {
 	connectionString := os.Getenv("DB_CONNECTION_STRING")
-	sqlStatement := `SELECT DISTINCT name FROM repos WHERE deleted != true;`
-	var list []string
+	sqlStatement := `
+    SELECT DISTINCT chat_id
+    FROM chats WHERE (SELECT extract(epoch from now())) - last_activity < 60*60*24*30*6;`
+
+	var list []int64
 
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
@@ -92,7 +141,7 @@ func GetReposList() (error, []string) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var r string
+		var r int64
 		if err := rows.Scan(&r); err != nil {
 			return err, list
 		}
@@ -137,16 +186,13 @@ func GetChatReposList(chatId int64) (error, []string) {
 
 	defer db.Close()
 
-	if len(list) == 0 {
-		list = append(list, "There is no repos at this moment :(")
-	}
-
 	return nil, list
 }
 
 func InsertReleaseData(checkTime, repo string, release internal.Release) {
 	connectionString := os.Getenv("DB_CONNECTION_STRING")
-	// ToDo: fix field 'last_updated' not updating on conflict
+	// After checking in Notifier, call InsertReleaseData occurs only on new release and there is no conflicts now.
+	// ToDo: Remove last_check field and ON CONFLICT condition
 	sqlStatement := `
 	INSERT INTO releases (
 	    repo_name,
