@@ -15,10 +15,6 @@ variable "project_id" {
   description = "The project ID to deploy resources into"
 }
 
-variable "subnetwork_project" {
-  description = "The project ID where the desired subnetwork is provisioned"
-}
-
 variable "subnetwork" {
   type        = string
   default     = "gh-bot-subnetwork"

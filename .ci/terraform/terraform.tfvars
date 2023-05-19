@@ -1,5 +1,4 @@
 project_id          = "gh-bot-386308"
-subnetwork_project  = "gh-bot-386308"
 region              = "europe-central2"
 zone                = "europe-central2-b"
 instance_type       = "f1-micro"
