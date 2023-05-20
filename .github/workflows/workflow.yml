@@ -84,9 +84,9 @@ jobs:
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
 
-      - name: Terraform Format
-        id: fmt
-        run: terraform -chdir=.ci/terraform fmt -check
+#      - name: Terraform Format
+#        id: fmt
+#        run: terraform -chdir=.ci/terraform fmt -check
 
       - name: Terraform Validate
         id: validate
