@@ -164,7 +164,7 @@ resource "google_cloud_run_service" "run" {
   template {
     spec {
       containers {
-        image = "s3kkt/github-releases-bot:release"
+        image = var.docker_image
         ports {
           container_port = 8080
         }

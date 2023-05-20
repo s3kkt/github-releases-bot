@@ -93,6 +93,10 @@ variable "bot_database_name" {
   description = "Bot DB name"
 }
 
+variable "docker_image" {
+  description = "Docker image with tag to run"
+}
+
 #variable "database_address" {
 #  description = "Bot DB name"
 #}
