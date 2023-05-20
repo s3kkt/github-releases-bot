@@ -73,7 +73,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Set Docker image to Env Variables
-        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.DOCKER_IMAGE }} >> $GITHUB_ENV
+        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v3
