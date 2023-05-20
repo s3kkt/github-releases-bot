@@ -24,7 +24,7 @@ jobs:
 #      BOT_DATABASE_PASS: ${{ secrets.BOT_DATABASE_PASS }}
       BOT_DATABASE_PORT: 5432
       BOT_DATABASE_NAME: "github-releases-bot"
-      BOT_DOCKER_IMAGE: ${{ steps.docker-push.outputs.docker_image }}
+#      BOT_DOCKER_IMAGE: ${{ steps.docker-push.outputs.docker_image }}
     permissions:
       pull-requests: write
     steps:
