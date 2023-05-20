@@ -27,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMG_NAME: s3kkt/github-releases-bot
+    outputs:
+      DOCKER_IMAGE: ${{ steps.docker-push.outputs.docker_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -61,8 +63,8 @@ jobs:
       - name: Docker image output
         id: docker-push
         run: echo "docker_image=${{ steps.metadata.outputs.tags }}" >> "$GITHUB_OUTPUT"
-    outputs:
-      DOCKER_IMAGE: ${{ steps.docker-push.outputs.docker_image }}
+      - name: Debug
+        run: echo $DOCKER_IMAGE
 
 
   terraform:
