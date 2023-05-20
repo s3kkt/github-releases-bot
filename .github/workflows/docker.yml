@@ -44,6 +44,8 @@ jobs:
           push: ${{ github.event.base_ref =='refs/heads/main' && github.ref_type == 'tag' && !startsWith(github.ref, 'refs/tags/v0.')}}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-      - name: Set color
-        id: docker-push
-        run: echo "BOT_DOCKER_IMAGE=${{ env.IMG_NAME }}:${{ steps.metadata.outputs.tags }}" >> "$GITHUB_OUTPUT"
+#      - name: Set color
+#        id: docker-push
+#        run: echo "BOT_DOCKER_IMAGE=${{ env.IMG_NAME }}:${{ steps.metadata.outputs.tags }}" >> "$GITHUB_OUTPUT"
+    outputs:
+      docker_image: ${{ env.IMG_NAME }}:${{ steps.metadata.outputs.tags }}
