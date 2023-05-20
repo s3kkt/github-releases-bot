@@ -12,15 +12,15 @@ jobs:
     name: 'Terraform'
     runs-on: ubuntu-latest
     env:
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GCP_REGION: europe-central2
-      GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
-      BOT_GTIHUB_TOKEN: ${{ secrets.BOT_GTIHUB_TOKEN }}
-      BOT_TELEGRAM_TOKEN: ${{ secrets.BOT_TELEGRAM_TOKEN }}
+#      GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
+#      BOT_GTIHUB_TOKEN: ${{ secrets.BOT_GTIHUB_TOKEN }}
+#      BOT_TELEGRAM_TOKEN: ${{ secrets.BOT_TELEGRAM_TOKEN }}
       BOT_DEBUG: false
       BOT_UPDATE_INTERVAL: "10m"
       BOT_DATABASE_USER: "github-bot"
-      BOT_DATABASE_PASS: ${{ secrets.BOT_DATABASE_PASS }}
+#      BOT_DATABASE_PASS: ${{ secrets.BOT_DATABASE_PASS }}
       BOT_DATABASE_PORT: 5432
       BOT_DATABASE_NAME: "github-releases-bot"
       BOT_DOCKER_IMAGE: ${{ steps.docker-push.outputs.BOT_DOCKER_IMAGE }}
@@ -91,6 +91,6 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform -chdir=.ci/terraform apply -auto-approve -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}"
+        run: terraform -chdir=.ci/terraform apply -auto-approve -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var="bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}" -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}"
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
