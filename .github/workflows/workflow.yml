@@ -60,7 +60,7 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
       - name: Docker image output
         id: docker-push
-        run: echo "docker_image=${{ env.IMG_NAME }}:${{ steps.metadata.outputs.tags }}" >> "$GITHUB_OUTPUT"
+        run: echo "docker_image=${{ steps.metadata.outputs.tags }}" >> "$GITHUB_OUTPUT"
     outputs:
       DOCKER_IMAGE: ${{ steps.docker-push.outputs.docker_image }}
 
