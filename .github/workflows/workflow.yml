@@ -8,6 +8,19 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
 
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: europe-central2
+  GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
+  BOT_GTIHUB_TOKEN: ${{ secrets.BOT_GTIHUB_TOKEN }}
+  BOT_TELEGRAM_TOKEN: ${{ secrets.BOT_TELEGRAM_TOKEN }}
+  BOT_DEBUG: false
+  BOT_UPDATE_INTERVAL: "10m"
+  BOT_DATABASE_USER: "github-bot"
+  BOT_DATABASE_PASS: ${{ secrets.BOT_DATABASE_PASS }}
+  BOT_DATABASE_PORT: 5432
+  BOT_DATABASE_NAME: "github-releases-bot"
+
 jobs:
   build-docker-image:
     name: 'Build docker image'
@@ -56,19 +69,6 @@ jobs:
     name: 'Terraform'
     runs-on: ubuntu-latest
     needs: [build-docker-image]
-    env:
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      GCP_REGION: europe-central2
-      GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
-      BOT_GTIHUB_TOKEN: ${{ secrets.BOT_GTIHUB_TOKEN }}
-      BOT_TELEGRAM_TOKEN: ${{ secrets.BOT_TELEGRAM_TOKEN }}
-      BOT_DEBUG: false
-      BOT_UPDATE_INTERVAL: "10m"
-      BOT_DATABASE_USER: "github-bot"
-      BOT_DATABASE_PASS: ${{ secrets.BOT_DATABASE_PASS }}
-      BOT_DATABASE_PORT: 5432
-      BOT_DATABASE_NAME: "github-releases-bot"
-      BOT_DOCKER_IMAGE: ${{ steps.docker-push.outputs.docker_image }}
     permissions:
       pull-requests: write
     steps:
