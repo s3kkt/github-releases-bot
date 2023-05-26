@@ -16,7 +16,7 @@ jobs:
     name: Build & push docker image
     runs-on: ubuntu-latest
     env:
-      IMG_NAME: ${{ github.repository }}
+      IMG_NAME: s3kkt/github-releases-bot
     steps:
       - name: Checkout
         uses: actions/checkout@v3
