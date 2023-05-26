@@ -36,7 +36,7 @@ jobs:
 #    env:
 #      IMG_NAME: s3kkt/github-releases-bot
     outputs:
-      docker_image: ${{ steps.metadata.outputs.docker_image }}
+      DOCKER_IMAGE: ${{ steps.set-env.outputs.DOCKER_IMAGE }}
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -57,6 +57,7 @@ jobs:
             type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
 
       - name: Set docker image env var
+        id: set-env
         run: echo "DOCKER_IMAGE=$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION" >> $GITHUB_ENV
 
       - name: Debug
