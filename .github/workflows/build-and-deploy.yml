@@ -92,6 +92,7 @@ jobs:
       #        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
       - env:
           DOCKER_IMAGE: ${{ needs.build.outputs.DOCKER_IMAGE }}
+        run: echo $DOCKER_IMAGE
 
       - name: Debug
         run: echo $DOCKER_IMAGE
