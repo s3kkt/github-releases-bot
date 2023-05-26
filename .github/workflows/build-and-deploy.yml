@@ -87,7 +87,7 @@ jobs:
       #      - name: Set Docker image to Env Variables
       #        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
       - name: Debug
-        run: echo env.DOCKER_IMAGE >> "$GITHUB_OUTPUT"
+        run: echo env.DOCKER_IMAGE >> "$GITHUB_STEP_SUMMARY"
 
       - name: Checkout
         uses: actions/checkout@v3
