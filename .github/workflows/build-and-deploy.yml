@@ -56,8 +56,8 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
 
-      - name: Set docker image var
-        run: echo "DOCKER_IMAGE=env.IMG_NAME:env.DOCKER_METADATA_OUTPUT_VERSION" >> "$GITHUB_ENV"
+      - name: Set docker image env var
+        run: echo "DOCKER_IMAGE=$IMG_NAME:env.DOCKER_METADATA_OUTPUT_VERSION" >> "$GITHUB_ENV"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -87,7 +87,7 @@ jobs:
       #      - name: Set Docker image to Env Variables
       #        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
       - name: Debug
-        run: echo env.DOCKER_IMAGE >> "$GITHUB_STEP_SUMMARY"
+        run: echo env.DOCKER_IMAGE
 
       - name: Checkout
         uses: actions/checkout@v3
