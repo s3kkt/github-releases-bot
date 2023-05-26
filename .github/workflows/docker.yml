@@ -6,10 +6,8 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
   pull_request:
-#    branches:
-#      - '*'
-
-#on: [pull_request]
+    branches:
+      - '*'
 
 jobs:
   build:
@@ -34,7 +32,6 @@ jobs:
           images: ${{ env.IMG_NAME }}
           tags: |
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
 
       - name: Log in to Docker Hub
@@ -44,6 +41,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
+        id: build-docker-image
         uses: docker/build-push-action@v4
         with:
           #context: .
@@ -52,3 +50,4 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
+          run: echo "DOCKER_IMAGE=$IMG_NAME:${{ steps.metadata.outputs.tags.semver }}" >> "$DOCKER_IMAGE"

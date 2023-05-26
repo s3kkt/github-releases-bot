@@ -1,0 +1,98 @@
+name: Deploy to GCP
+on:
+  pull_request:
+    types: closed
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: europe-central2
+  GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
+  BOT_GTIHUB_TOKEN: ${{ secrets.BOT_GTIHUB_TOKEN }}
+  BOT_TELEGRAM_TOKEN: ${{ secrets.BOT_TELEGRAM_TOKEN }}
+  BOT_DEBUG: false
+  BOT_UPDATE_INTERVAL: "10m"
+  BOT_DATABASE_USER: "github-bot"
+  BOT_DATABASE_PASS: ${{ secrets.BOT_DATABASE_PASS }}
+  BOT_DATABASE_PORT: 5432
+  BOT_DATABASE_NAME: "github-releases-bot"
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    needs: [build-docker-image]
+    permissions:
+      pull-requests: write
+    steps:
+#      - name: Set Docker image to Env Variables
+#        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
+      - name: Debug
+        run: echo $DOCKER_IMAGE
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        id: init
+        run: terraform -chdir=.ci/terraform init
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+#      - name: Terraform Format
+#        id: fmt
+#        run: terraform -chdir=.ci/terraform fmt -check
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform -chdir=.ci/terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform -chdir=.ci/terraform plan -no-color -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var="bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}" -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}" -var="docker_image==$DOCKER_IMAGE"
+        continue-on-error: true
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+#      - name: Update Pull Request
+#        uses: actions/github-script@v6
+#        if: github.event_name == 'pull_request'
+#        env:
+#          PLAN: "${{ steps.plan.outputs.stdout }}"
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          script: |
+#            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+#            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+#            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+#            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+#
+#            <details><summary>Show Plan</summary>
+#
+#            \`\`\`terraform\n
+#            ${process.env.PLAN}
+#            \`\`\`
+#
+#            </details>
+#
+#            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+#
+#            github.rest.issues.createComment({
+#              issue_number: context.issue.number,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              body: output
+#            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+#      - name: Terraform Apply
+#        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+#        run: terraform -chdir=.ci/terraform apply -auto-approve -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var="bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}" -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}" -var="docker_image==$DOCKER_IMAGE"
+#        env:
+#          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
