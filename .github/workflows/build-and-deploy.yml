@@ -36,7 +36,7 @@ jobs:
 #    env:
 #      IMG_NAME: s3kkt/github-releases-bot
     outputs:
-      docker_image: ${{ steps.step4.outputs.docker_image }}
+      docker_image: ${{ steps.metadata.outputs.docker_image }}
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -55,6 +55,8 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
+
+      - name: Set docker image var
         run: echo "docker_image=$IMG_NAME" >> $GITHUB_OUTPUT
 
       - name: Log in to Docker Hub
