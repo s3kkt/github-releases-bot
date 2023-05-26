@@ -36,6 +36,12 @@ type Release struct {
 	} `json:"author"`
 }
 
+type LatestRelease struct {
+	RepoName    string    `db:"repo_name"`
+	TagName     string    `db:"tag_name"`
+	PublishedAt time.Time `db:"published_at"`
+}
+
 type APIError struct {
 	Message          string `json:"message"`
 	DocumentationUrl string `json:"documentation_url"`

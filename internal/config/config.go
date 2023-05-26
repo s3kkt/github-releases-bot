@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
-	"regexp"
 )
 
 func ParseFlags() (string, bool, bool) {
@@ -37,11 +36,6 @@ func ReadConfigEnv(cfg *internal.Config) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func GetApiURL(url string) string {
-	re := regexp.MustCompile(`github.com/`)
-	return re.ReplaceAllString(url, `api.github.com/repos/`) + "/releases/latest"
 }
 
 func DatabaseConnectionString(conf internal.Config, runInCloud bool) string {

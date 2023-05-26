@@ -36,7 +36,12 @@ func main() {
 		"upstream-dep-dns",
 		healthcheck.DNSResolveCheck("api.telegram.org", 50*time.Millisecond))
 
-	go http.ListenAndServe("0.0.0.0:8080", health)
+	go func() {
+		err := http.ListenAndServe("0.0.0.0:8080", health)
+		if err != nil {
+			log.Fatal("Cannot open heathcheck port: ", err)
+		}
+	}()
 
 	err := os.Setenv("DB_CONNECTION_STRING", dbString)
 	if err != nil {

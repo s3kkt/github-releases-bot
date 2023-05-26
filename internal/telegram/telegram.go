@@ -3,7 +3,6 @@ package telegram
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/s3kkt/github-releases-bot/internal"
-	"github.com/s3kkt/github-releases-bot/internal/config"
 	"github.com/s3kkt/github-releases-bot/internal/database"
 	"github.com/s3kkt/github-releases-bot/internal/helpers"
 	"github.com/s3kkt/github-releases-bot/internal/transport"
@@ -23,9 +22,11 @@ var (
 	listButton   = "List repos"
 	addButton    = "Add repo"
 	deleteButton = "Delete repo"
+	latestButton = "Show latest tags"
 	helpButton   = "Halp!"
 	docsButton   = "Documentation"
 
+	// Service messages
 	addMessageText    = "Adding repository. Reply on this message and send GitHub link (format: https://author/repository)"
 	deleteMessageText = "Deleting repository. Reply on this message and send GitHub link (format: https://author/repository)"
 	helpMessageText   = `
@@ -36,6 +37,7 @@ var (
 /add    - Add repo to list. Bot will send you a message, just answer on it and send repository link.
 Example: https://github.com/s3kkt/github-releases-bot
 /delete - Delete repo from list. Action is the same as add command.
+/latest - Show latest tags and release dates for repos
 /help   - Show this message.
 
 <b>For more information press "Docs" button in menu</b>`
@@ -52,6 +54,9 @@ Example: https://github.com/s3kkt/github-releases-bot
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(deleteButton, deleteButton),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(latestButton, latestButton),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(helpButton, helpButton),
@@ -205,6 +210,9 @@ func handleCommand(message *tgbotapi.Message, command string) error {
 	case "/delete":
 		err = deleteRepo(message.Chat.ID)
 		break
+	case "/latest":
+		err = listLatest(message.Chat.ID)
+		break
 	case "/help":
 		err = sendHelp(message.Chat.ID)
 		break
@@ -229,6 +237,12 @@ func handleButton(query *tgbotapi.CallbackQuery) {
 			msg := tgbotapi.NewMessage(message.Chat.ID, helpers.ReposListOutput(reposList))
 			msg.DisableWebPagePreview = true
 			bot.Send(msg)
+		}
+	} else if query.Data == latestButton {
+		text = latestButton
+		err := listLatest(message.Chat.ID)
+		if err != nil {
+			return
 		}
 	} else if query.Data == addButton {
 		text = addButton
@@ -282,6 +296,19 @@ func listRepos(chatId int64) error {
 	return err
 }
 
+func listLatest(chatId int64) error {
+	latestList, err := database.GetChatLatestList(chatId)
+	if err != nil {
+		log.Fatal("Failed to get latest list: %w", err)
+	} else {
+		msg := tgbotapi.NewMessage(chatId, helpers.LatestListOutput(latestList))
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.DisableWebPagePreview = true
+		bot.Send(msg)
+	}
+	return err
+}
+
 func addRepo(chatId int64) error {
 	msg := tgbotapi.NewMessage(chatId, addMessageText)
 	_, err := bot.Send(msg)
@@ -312,25 +339,24 @@ func Notifier(conf internal.Config, chatId int64) {
 			return
 		}
 		for _, repo := range reposList {
-			release, err := transport.GetReleases(config.GetApiURL(repo), conf.GitHubToken)
+			release, err := transport.GetReleases(helpers.GetApiURL(repo), conf.GitHubToken)
 			if err != nil {
 				log.Println(err)
 			} else {
-				log.Printf("DEBUG: checking if %s is new release for %s", release.TagName, repo)
+				log.Printf("Checking if %s is new release for %s", release.TagName, repo)
 				ifNew, err := database.CheckIfNew(repo, release.TagName)
 				if err != nil {
-					log.Println("DEBUG: response from CheckIfNew:", err)
 					continue
 				} else if ifNew == true {
 
+					log.Printf("%s is new release for %s, inserting data to database.", release.TagName, repo)
 					checkTime := time.Now().Format(time.RFC3339)
-					log.Println("DEBUG: inserting new release data in database")
-					database.InsertReleaseData(checkTime, repo, release)
+					database.InsertReleaseData(checkTime, repo, release, true)
 
 					log.Printf("Try to send updates. Chat ID: %d", chatId)
 					err := sendReleased(chatId, repo, release.TagName, release.HtmlUrl, release.Body)
 					if err != nil {
-						log.Printf("Failed to send release update to chat with id %d. Reason: %s", chatId, err)
+						log.Printf("Failed to send release update. ChatId: %d. Reason: %s", chatId, err)
 						return
 					}
 				}
@@ -343,7 +369,7 @@ func Notifier(conf internal.Config, chatId int64) {
 func sendReleased(chatId int64, repoName, tag, url, releaseNotes string) error {
 	r := helpers.SanitizeRepoName(repoName)
 	n := helpers.SanitizeReleaseNotes(releaseNotes)
-	msg := tgbotapi.NewMessage(chatId, "<b>"+r+"</b> released <b>"+tag+"</b>\n\n<b>Link: </b>"+url+"\n\n<b>Notes: </b>\n"+n+"<a href='"+url+"'>Read more</a>\n")
+	msg := tgbotapi.NewMessage(chatId, "<b>"+r+"</b> released <b>"+tag+"</b>\n\n<b>Link: </b>"+url+"\n\n<b>Notes: </b>\n"+n+"\n<a href='"+url+"'>Read more</a>\n")
 	msg.ParseMode = tgbotapi.ModeHTML
 	_, err := bot.Send(msg)
 	return err
