@@ -1,11 +1,11 @@
 name: Build and publish a Docker image
 on:
-  workflow_call:
+#  workflow_call:
     # Map the workflow outputs to job outputs
-    outputs:
-      docker_image:
-        description: "Docker image with tag"
-        value: ${{ jobs.build.outputs.docker_image }}
+#    outputs:
+#      docker_image:
+#        description: "Docker image with tag"
+#        value: ${{ jobs.build.outputs.DOCKER_IMAGE }}
   push:
     branches:
       - '*'
@@ -58,7 +58,7 @@ jobs:
 
       - name: Set docker image env var
         id: set-env
-        run: echo "DOCKER_IMAGE=$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION" >> $GITHUB_ENV
+        run: echo "DOCKER_IMAGE=$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Debug
         run: echo $DOCKER_IMAGE
@@ -90,6 +90,9 @@ jobs:
     steps:
       #      - name: Set Docker image to Env Variables
       #        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
+      - env:
+          OUTPUT1: ${{ needs.build.outputs.DOCKER_IMAGE }}
+
       - name: Debug
         run: echo $DOCKER_IMAGE
 
