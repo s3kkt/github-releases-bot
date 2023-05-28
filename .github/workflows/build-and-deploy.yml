@@ -48,6 +48,7 @@ jobs:
 #      IMG_NAME: s3kkt/github-releases-bot
     outputs:
       image: ${{ steps.set-env.outputs.image }}
+      version: ${{ steps.metadata.outputs.org.opencontainers.image.version }}
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -90,7 +91,6 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          #run: echo "DOCKER_IMAGE=$IMG_NAME:${{ steps.metadata.outputs.tags.semver }}" >> "$DOCKER_IMAGE"
 
   terraform:
     name: 'Terraform'
@@ -99,10 +99,8 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      #      - name: Set Docker image to Env Variables
-      #        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
       - name: Debug
-        run: echo ${{needs.build.outputs.image}}
+        run: echo ${{needs.build.outputs.version}}
 
       - name: Checkout
         uses: actions/checkout@v3
