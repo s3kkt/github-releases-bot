@@ -46,9 +46,9 @@ jobs:
     runs-on: ubuntu-latest
 #    env:
 #      IMG_NAME: s3kkt/github-releases-bot
-    outputs:
-      image: ${{ steps.set-env.outputs.image }}
-      version: ${{ steps.metadata.outputs.org.opencontainers.image.version }}
+#    outputs:
+#      image: ${{ steps.set-env.outputs.image }}
+#      version: ${{ steps.metadata.outputs.org.opencontainers.image.version }}
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -59,6 +59,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+#      - name: Docker metadata
+#        id: metadata
+#        uses: docker/metadata-action@v4
+#        with:
+#          images: ${{ env.IMG_NAME }}
+#          tags: |
+#            type=semver,pattern={{version}}
+#            type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
+
       - name: Docker metadata
         id: metadata
         uses: docker/metadata-action@v4
@@ -66,14 +75,14 @@ jobs:
           images: ${{ env.IMG_NAME }}
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
+            type=raw,value={{sha}}
 
-      - name: Set docker image env var
-        id: set-env
-        run: echo "image=$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Debug
-        run: echo "$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION"
+#      - name: Set docker image env var
+#        id: set-env
+#        run: echo "image=$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION" >> $GITHUB_OUTPUT
+#
+#      - name: Debug
+#        run: echo "$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -125,7 +134,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        run: terraform -chdir=.ci/terraform plan -no-color -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var='bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}' -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}" -var="docker_image==$IMG_NAME:$GITHUB_SHA"
+        run: terraform -chdir=.ci/terraform plan -no-color -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var='bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}' -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}" -var="docker_image==$IMG_NAME:${GITHUB_SHA::7}"
         continue-on-error: true
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
