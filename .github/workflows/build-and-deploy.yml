@@ -57,7 +57,7 @@ jobs:
 
       - name: Set docker image env var
         id: set-env
-        run: echo "docker_image=$IMG_NAME:DOCKER_METADATA_OUTPUT_VERSION" >> "$GITHUB_ENV"
+        run: echo "docker_image=$IMG_NAME:DOCKER_METADATA_OUTPUT_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Debug
         run: echo "$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION"
@@ -90,7 +90,7 @@ jobs:
       #      - name: Set Docker image to Env Variables
       #        run: echo $DOCKER_IMAGE=${{ needs.build-docker-image.outputs.docker_image }} >> $GITHUB_ENV
       - name: Debug
-        run: echo "$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION"
+        run: echo ${{ needs.build.outputs.docker_image }}
 
       - name: Checkout
         uses: actions/checkout@v3
