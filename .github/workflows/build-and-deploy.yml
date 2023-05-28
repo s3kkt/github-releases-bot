@@ -60,7 +60,7 @@ jobs:
         run: echo "docker_image=$IMG_NAME:DOCKER_METADATA_OUTPUT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Debug
-        run: "echo $IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION"
+        run: echo "$IMG_NAME:$DOCKER_METADATA_OUTPUT_VERSION"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
