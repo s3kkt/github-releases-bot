@@ -3,39 +3,59 @@ package config
 import (
 	"flag"
 	"fmt"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/s3kkt/github-releases-bot/internal"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
-	"regexp"
 )
 
-func ParseFlags() string {
-	configPath := flag.String("config", "/", "path to YAML config file")
+func ParseFlags() (string, bool, bool) {
+	configPath := flag.String("config", "", "path to YAML config file")
+	dbMigrate := flag.Bool("migrations", false, "set true to run migrations only")
+	runInCloud := flag.Bool("cloud", false, "set true to run in GCP")
 	flag.Parse()
-	return *configPath
+	return *configPath, *dbMigrate, *runInCloud
 }
 
-func GetConfig(configPath string) internal.Config {
-	config, err := os.ReadFile(configPath)
+func ReadConfigFile(configPath string, cfg *internal.Config) {
+	f, err := os.Open(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var c internal.Config
 
-	if err := yaml.Unmarshal(config, &c); err != nil {
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(cfg)
+	if err != nil {
 		log.Fatal(err)
 	}
-	return c
 }
 
-func GetApiURL(url string) string {
-	re := regexp.MustCompile(`github.com/`)
-	return re.ReplaceAllString(url, `api.github.com/repos/`) + "/releases/latest"
+func ReadConfigEnv(cfg *internal.Config) {
+	err := envconfig.Process("", cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func DatabaseConnectionString(configPath string) string {
-	conf := GetConfig(configPath)
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		conf.Database.Username, conf.Database.Password, conf.Database.Host, conf.Database.Port, conf.Database.DBName)
+func DatabaseConnectionString(conf internal.Config, runInCloud bool) string {
+	var conn string
+	if runInCloud == true {
+		conn = fmt.Sprintf(
+			"host=/cloudsql/%s user=%s password=%s dbname=%s sslmode=disable",
+			conf.Database.Host,
+			conf.Database.Username,
+			conf.Database.Password,
+			conf.Database.DBName)
+	} else {
+		conn = fmt.Sprintf(
+			"postgres://%v:%v@%v:%v/%v?sslmode=disable",
+			conf.Database.Username,
+			conf.Database.Password,
+			conf.Database.Host,
+			conf.Database.Port,
+			conf.Database.DBName,
+		)
+	}
+	return conn
 }

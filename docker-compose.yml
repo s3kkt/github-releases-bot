@@ -10,7 +10,7 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "15432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U github-bot -d github-releases-bot"]
       interval: 10s
@@ -24,21 +24,23 @@ services:
           cpus: '1'
           memory: 4G
     networks:
-      - github-bot
+      - bot
 
   app:
     image: s3kkt/github-releases-bot
     build:
       context: .
-    volumes:
-      - ./configs:/etc/github-bot
+    env_file:
+      - ./configs/.env
+#    volumes:
+#      - ./configs:/etc/github-bot
     depends_on:
       - database
-    command: -config="/etc/github-bot/config.yml"
+    #command: -config="/etc/github-bot/config.yml"
     tty: true
     networks:
-      - github-bot
+      - bot
 
 networks:
-  github-bot:
+  bot:
     driver: bridge

@@ -1,4 +1,9 @@
-configs
-pgdata
+configs/
+pgdata/
+./ci/.terraform/
+./ci/.terraform.lock.hcl
+./ci/.terraform.tfstate.lock.info
+./ci/terraform.tfstate.backup
+./ci/terraform.tfstate
 docker-compose.yml
 github-releases-bot

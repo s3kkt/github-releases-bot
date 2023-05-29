@@ -1,2 +1,8 @@
 configs
 pgdata
+./ci/.terraform/
+./ci/.terraform.lock.hcl
+./ci/.terraform.tfstate.lock.info
+./ci/terraform.tfstate.backup
+./ci/terraform.tfstate
+github-releases-bot

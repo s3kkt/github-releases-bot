@@ -1,0 +1,14 @@
+project_id          = "gh-bot-386308"
+region              = "europe-central2"
+zone                = "europe-central2-b"
+instance_type       = "f1-micro"
+client_email        = "deploy@gh-bot-386308.iam.gserviceaccount.com"
+bot_github_token    = "xxx"
+bot_telegram_token  = "yyy"
+bot_debug           = false
+bot_update_interval = "10m"
+bot_database_user   = "github-bot"
+bot_database_pass   = "123qwe123qwe"
+bot_database_host   = "0.0.0.0"
+bot_database_port   = 5432
+bot_database_name   = "github-releases-bot"

@@ -14,5 +14,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/cache/apt/
 COPY --from=build /app/github-releases-bot .
+COPY internal .
 
 ENTRYPOINT ["/github-releases-bot"]
