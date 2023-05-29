@@ -101,7 +101,6 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request'
         run: terraform -chdir=.ci/terraform plan -no-color -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var='bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}' -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}" -var="docker_image==$IMG_NAME:${GITHUB_SHA::7}"
         continue-on-error: true
         env:
@@ -142,7 +141,8 @@ jobs:
         run: exit 1
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: terraform -chdir=.ci/terraform apply -auto-approve -input=false -var="project_id==${{ secrets.GCP_PROJECT_ID }}" -var="region==${{ env.GCP_REGION }}" -var="client_email==${{ secrets.GCP_CLIENT_EMAIL }}" -var="bot_github_token==${{ secrets.BOT_GTIHUB_TOKEN }}" -var="bot_telegram_token==${{ secrets.BOT_TELEGRAM_TOKEN }}" -var="bot_debug==${{ env.BOT_DEBUG }}" -var="bot_update_interval==${{ env.BOT_UPDATE_INTERVAL }}" -var="bot_database_user==${{ env.BOT_DATABASE_USER }}" -var="bot_database_pass==${{ env.BOT_DATABASE_PASS }}" -var="bot_database_port==${{ env.BOT_DATABASE_PORT }}" -var="bot_database_name==${{ env.BOT_DATABASE_NAME }}" -var="docker_image==$IMG_NAME:${{ github.ref_name }}""
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
