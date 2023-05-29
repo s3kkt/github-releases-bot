@@ -266,7 +266,6 @@ func handleButton(query *tgbotapi.CallbackQuery) {
 	// Replace menu text and keyboard
 	msg := tgbotapi.NewEditMessageTextAndMarkup(message.Chat.ID, message.MessageID, text, markup)
 	msg.ParseMode = tgbotapi.ModeHTML
-	//msg.ParseMode = tgbotapi.ModeMarkdownV2
 	bot.Send(msg)
 }
 

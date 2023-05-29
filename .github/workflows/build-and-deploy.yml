@@ -79,9 +79,6 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Debug
-        run: echo ${{needs.build.outputs.version}}
-
       - name: Checkout
         uses: actions/checkout@v3
 
