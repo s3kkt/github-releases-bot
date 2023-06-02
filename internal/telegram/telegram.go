@@ -42,7 +42,7 @@ Example: https://github.com/s3kkt/github-releases-bot
 
 <b>For more information press "Docs" button in menu</b>`
 
-	docsText = "https://github.com/s3kkt/github-releases-bot"
+	docsText = "https://github.com/s3kkt/github-releases-bot/blob/master/README.md"
 
 	// Keyboard layout for the first menu. One button, one row
 	firstMenuMarkup = tgbotapi.NewInlineKeyboardMarkup(

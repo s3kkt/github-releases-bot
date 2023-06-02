@@ -29,7 +29,6 @@ resource "google_service_networking_connection" "default" {
 }
 
 resource "google_sql_database_instance" "instance" {
-  #name             = var.bot_database_name
   region           = var.region
   database_version = "POSTGRES_14"
 
@@ -54,7 +53,7 @@ resource "google_sql_database_instance" "instance" {
 #      }
 #    }
   }
-  deletion_protection = "true"
+  deletion_protection = true
 }
 
 #resource "google_compute_network_peering_routes_config" "peering_routes" {
@@ -64,25 +63,17 @@ resource "google_sql_database_instance" "instance" {
 #  export_custom_routes = true
 #}
 
-resource "google_sql_database" "postgres" {
-  name     = var.bot_database_name
-  instance = google_sql_database_instance.instance.name
-  deletion_policy  = "ABANDON"
-}
+#resource "google_sql_database" "postgres" {
+#  name     = var.bot_database_name
+#  instance = google_sql_database_instance.instance.name
+#  #deletion_policy  = "ABANDON"
+#}
 
 resource "google_sql_user" "database-user" {
   name = var.bot_database_user
   instance = google_sql_database_instance.instance.name
   password = var.bot_database_pass
-}
-
-resource "google_cloud_run_service_iam_member" "member" {
-#  service = google_cloud_run_v2_service.run.name
-#  location = google_cloud_run_v2_service.run.location
-  service = google_cloud_run_service.run.name
-  location = google_cloud_run_service.run.location
-  role = "roles/run.invoker"
-  member = "allUsers"
+  deletion_policy  = "ABANDON"
 }
 
 #resource "google_cloud_run_service_iam_member" "member" {
@@ -90,72 +81,6 @@ resource "google_cloud_run_service_iam_member" "member" {
 #  location = google_cloud_run_service.run.location
 #  role = "roles/run.invoker"
 #  member = "allUsers"
-#}
-
-#resource "google_cloud_run_v2_service" "run" {
-#  name="gh-bot"
-#  location = "us-central1"
-#
-#  template {
-#    volumes {
-#      name = "cloudsql"
-#      cloud_sql_instance {
-#        instances = [google_sql_database_instance.instance.connection_name]
-#      }
-#    }
-#    containers {
-#      image = "s3kkt/github-releases-bot:debug3"
-#      env {
-#        name="BOT_GITHUB_TOKEN"
-#        value = var.bot_github_token
-#      }
-#      env {
-#        name="BOT_TELEGRAM_TOKEN"
-#        value = var.bot_telegram_token
-#      }
-#      env {
-#        name="BOT_DEBUG"
-#        value = false
-#      }
-#      env {
-#        name="BOT_UPDATE_INTERVAL"
-#        value = "10m"
-#      }
-#      env {
-#        name="BOT_DB_USER"
-#        value = var.bot_database_user
-#      }
-#      env {
-#        name="BOT_DB_PASS"
-#        value = var.bot_database_pass
-#      }
-#      env {
-#        name="BOT_DB_HOST"
-#        value = google_sql_database_instance.instance.connection_name
-#      }
-#      env {
-#        name="BOT_DB_PORT"
-#        value = 5432
-#      }
-#      env {
-#        name="BOT_DB_NAME"
-#        value = var.bot_database_name
-#      }
-#      volume_mounts {
-#        name = "cloudsql"
-#        mount_path = "/cloudsql"
-#      }
-#      liveness_probe {
-#        http_get {
-#          path = "/live"
-#        }
-#      }
-#    }
-#  }
-#  traffic {
-#    type = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
-#    percent = 100
-#  }
 #}
 
 resource "google_cloud_run_service" "run" {

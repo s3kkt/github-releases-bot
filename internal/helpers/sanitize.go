@@ -24,32 +24,34 @@ func LatestListOutput(latestList []internal.LatestRelease) string {
 	var latest []string
 
 	// Count length of repo name and tag name strings to format output table
-	lenRepo := -1
-	lenTag := -1
-	for _, s := range latestList {
-		re := regexp.MustCompile(`https://github.com/`)
-		repo := re.ReplaceAllString(s.RepoName, "${1}")
-		if len(repo) < lenRepo {
-			continue
-		}
-		if len(repo) > lenRepo {
-			lenRepo = len(repo)
-		}
-		if len(s.TagName) < lenTag {
-			continue
-		}
-		if len(s.TagName) > lenTag {
-			lenTag = len(s.TagName)
-		}
-	}
-
-	log.Printf("DEBUG: repoLen %v\n", lenRepo)
-	log.Printf("DEBUG: tagLen %v\n", lenTag)
+	// ToDo: make one loop for count both lenRepo, lenTag
+	var lenRepo, lenTag int
 
 	if len(latestList) == 0 {
 		return "There is no releases at this moment."
+	} else {
+		for _, s := range latestList {
+			re := regexp.MustCompile(`https://github.com/`)
+			repo := re.ReplaceAllString(s.RepoName, "${1}")
+			if len(repo) < lenRepo {
+				continue
+			}
+			if len(repo) > lenRepo {
+				lenRepo = len(repo)
+			}
+		}
+
+		for _, s := range latestList {
+			if len(s.TagName) < lenTag {
+				continue
+			}
+			if len(s.TagName) > lenTag {
+				lenTag = len(s.TagName)
+			}
+		}
 	}
 
+	// Format output table
 	latest = append(latest, "<pre>")
 	latest = append(latest, fmt.Sprintf("+%s+%s+%s+", strings.Repeat("-", lenRepo+2), strings.Repeat("-", lenTag+2), strings.Repeat("-", 12)))
 	latest = append(latest, fmt.Sprintf("| Name%s| Tag%s| Date%s|", strings.Repeat(" ", lenRepo-3), strings.Repeat(" ", lenTag-2), strings.Repeat(" ", 7)))

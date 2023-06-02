@@ -4,6 +4,9 @@ build:
 migrate:
 	go run cmd/bot/main.go -config="./configs/config.yml" -migrations=true
 
+migrate-cloud:
+	go run cmd/bot/main.go -migrations=true
+
 run:
 	go run cmd/bot/main.go -config="./configs/config.yml"
 
