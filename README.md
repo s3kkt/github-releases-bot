@@ -57,7 +57,7 @@ database:
 ### Environment variables
 All config settings can be overwritten by environment variables
 
-| Config key       | Environment variable | type                                  |
+| Config key       | Environment variable | Type                                  |
 |------------------|----------------------|---------------------------------------|
 | github_token     | BOT_GITHUB_TOKEN     | string                                |
 | telegram_token   | BOT_TELEGRAM_TOKEN   | string                                |
@@ -72,11 +72,11 @@ All config settings can be overwritten by environment variables
 
 ### Flags
 
-| Flag        | Description                                                                                                           | Default | 
-|-------------|-----------------------------------------------------------------------------------------------------------------------|---------|
-| -config     | path to .yml config file                                                                                              | -       |
-| -migrations | if true, only migrations will be applied, bot will not start                                                          | false   |
-| -cloud      | if true, bot will use database connection string formatted to use Google cloud SQL instance, described in `main.tf`   | false   |
+| Flag          | Description                                                                                                           | Default | 
+|---------------|-----------------------------------------------------------------------------------------------------------------------|---------|
+| -config       | path to .yml config file                                                                                              | -       |
+| -migrations   | if true, only migrations will be applied, bot will not start                                                          | false   |
+| -cloud        | if true, bot will use database connection string formatted to use Google cloud SQL instance, described in `main.tf`   | false   |
 
 
 ## Database
@@ -85,7 +85,7 @@ For now only Postgres is supported.
 
 ### Migrations
 Before we start we need to prepare database. To run migrations you can:
-1. Install go migrations package ang run migrations manually:
+1. Install go `migrations` package and run migrations manually:
 ```bash
 git clone https://github.com/s3kkt/github-releases-bot.git && cd github-releases-bot
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
@@ -99,7 +99,7 @@ migrate -database ${DB_URL} -path ./internal/database/migrations up
 You can run test installation of `github-releases-bot` via docker-compose.
 1. Prepare bot environment variables as described above and put it in `configs/.env` subfolder of this project
 2. Check your database port
-3. Run `docker-compose up` command
+3. Run `docker-compose up` command:
 
 ```bash
 docker-compose up -d --build
@@ -108,7 +108,7 @@ docker-compose up -d --build
 ### Docker
 To start production variant of `github-releases-bot` in docker with dedicated Postgres instance, follow this simple steps:
 1. Prepare database as described above
-2. 
+2. Run following command:
 
 ```bash
 docker run -v <path-to config.yml>:/etc/gh-bot/config.yml s3kkt/github-releases-bot:latest -config="/etc/gh-bot/config.yml"

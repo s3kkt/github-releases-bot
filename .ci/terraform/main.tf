@@ -1,6 +1,6 @@
 locals {
   #instance_name = format("%s-%s", var.instance_name, substr(md5(module.gce-container.container.image), 0, 8))
-  config_path   = "/etc/github-bot/config.yml"
+  config_path = "/etc/github-bot/config.yml"
 }
 
 resource "google_storage_bucket" "gcs_bucket" {
@@ -35,7 +35,7 @@ resource "google_sql_database_instance" "instance" {
   depends_on = [google_service_networking_connection.default]
 
   settings {
-    tier      = "db-f1-micro"
+    tier = "db-f1-micro"
     database_flags {
       name  = "cloudsql.iam_authentication"
       value = "on"
@@ -43,15 +43,15 @@ resource "google_sql_database_instance" "instance" {
     ip_configuration {
       ipv4_enabled    = "true"
       private_network = google_compute_network.peering_network.id
-      require_ssl = false
+      require_ssl     = false
     }
     disk_size = 10
-#    ip_configuration {
-#      authorized_networks {
-#        //value = google_compute_instance.vm.network_interface.0.access_config.0.nat_ip
-#        value = google_cloud_run_service.run.connection
-#      }
-#    }
+    #    ip_configuration {
+    #      authorized_networks {
+    #        //value = google_compute_instance.vm.network_interface.0.access_config.0.nat_ip
+    #        value = google_cloud_run_service.run.connection
+    #      }
+    #    }
   }
   deletion_protection = true
 }
@@ -70,10 +70,10 @@ resource "google_sql_database_instance" "instance" {
 #}
 
 resource "google_sql_user" "database-user" {
-  name = var.bot_database_user
-  instance = google_sql_database_instance.instance.name
-  password = var.bot_database_pass
-  deletion_policy  = "ABANDON"
+  name            = var.bot_database_user
+  instance        = google_sql_database_instance.instance.name
+  password        = var.bot_database_pass
+  deletion_policy = "ABANDON"
 }
 
 #resource "google_cloud_run_service_iam_member" "member" {
@@ -84,7 +84,7 @@ resource "google_sql_user" "database-user" {
 #}
 
 resource "google_cloud_run_service" "run" {
-  name="gh-bot"
+  name     = "gh-bot"
   location = "us-central1"
   template {
     spec {
@@ -99,39 +99,39 @@ resource "google_cloud_run_service" "run" {
           }
         }
         env {
-          name="BOT_GITHUB_TOKEN"
+          name  = "BOT_GITHUB_TOKEN"
           value = var.bot_github_token
         }
         env {
-          name="BOT_TELEGRAM_TOKEN"
+          name  = "BOT_TELEGRAM_TOKEN"
           value = var.bot_telegram_token
         }
         env {
-          name="BOT_DEBUG"
+          name  = "BOT_DEBUG"
           value = false
         }
         env {
-          name="BOT_UPDATE_INTERVAL"
+          name  = "BOT_UPDATE_INTERVAL"
           value = "10m"
         }
         env {
-          name="BOT_DB_USER"
+          name  = "BOT_DB_USER"
           value = var.bot_database_user
         }
         env {
-          name="BOT_DB_PASS"
+          name  = "BOT_DB_PASS"
           value = var.bot_database_pass
         }
         env {
-          name="BOT_DB_HOST"
+          name  = "BOT_DB_HOST"
           value = google_sql_database_instance.instance.connection_name
         }
         env {
-          name="BOT_DB_PORT"
+          name  = "BOT_DB_PORT"
           value = 5432
         }
         env {
-          name="BOT_DB_NAME"
+          name  = "BOT_DB_NAME"
           value = var.bot_database_name
         }
         args = ["-cloud=true"]
@@ -140,7 +140,7 @@ resource "google_cloud_run_service" "run" {
     }
     metadata {
       annotations = {
-        "run.googleapis.com/cloudsql-instances"=google_sql_database_instance.instance.connection_name
+        "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
       }
     }
   }
