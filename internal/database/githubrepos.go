@@ -363,7 +363,7 @@ func CheckIfNew(repo, tag string) (bool, error) {
         tag_name = $2 AND
         repos.deleted = false;`
 
-	db, err := sql.Open("postgres", connectionString)
+	db, err := sqlx.Open("postgres", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}

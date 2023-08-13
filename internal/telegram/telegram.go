@@ -24,23 +24,23 @@ var (
 	deleteButton = "Delete repo"
 	latestButton = "Show latest tags"
 	helpButton   = "Halp!"
-	docsButton   = "Documentation"
+	docsButton   = "GitHub"
 
 	// Service messages
 	addMessageText    = "Adding repository. Reply on this message and send GitHub link (format: https://author/repository)"
 	deleteMessageText = "Deleting repository. Reply on this message and send GitHub link (format: https://author/repository)"
 	helpMessageText   = `
-<b>Commands short description and functionality:</b>
+<b>Bot commands short description:</b>
 
-/menu   - Show bot menu buttons.
-/list   - List added repositories.
+/menu   - Show bot menu buttons
+/list   - List added repositories
 /add    - Add repo to list. Bot will send you a message, just answer on it and send repository link.
 Example: https://github.com/s3kkt/github-releases-bot
-/delete - Delete repo from list. Action is the same as add command.
+/delete - Delete repo from list. Action is the same as 'add' command
 /latest - Show latest tags and release dates for repos
-/help   - Show this message.
+/help   - Show this message
 
-<b>For more information press "Docs" button in menu</b>`
+<b>For more information press "GitHub" button in menu</b>`
 
 	docsText = "https://github.com/s3kkt/github-releases-bot/blob/master/README.md"
 
