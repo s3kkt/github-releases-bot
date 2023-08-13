@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/heptiolabs/healthcheck"
+	"github.com/jmoiron/sqlx"
 	"github.com/s3kkt/github-releases-bot/internal"
 	"github.com/s3kkt/github-releases-bot/internal/config"
 	"github.com/s3kkt/github-releases-bot/internal/database"
@@ -48,10 +50,26 @@ func main() {
 		return
 	}
 
-	database.CheckDatabaseConnection()
+	db, err := sql.Open("postgres", dbString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer db.Close()
+
+	dbx, err := sqlx.Open("postgres", dbString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer dbx.Close()
+
+	githubRepo := database.NewGithubRepo(db, dbx)
+
+	githubRepo.CheckDatabaseConnection()
 
 	if dbMigrate == true {
-		err = database.Migrate()
+		err = githubRepo.Migrate()
 		if err != nil {
 			log.Fatalf("Migration failed! Reason: %s", err)
 		} else {
@@ -59,10 +77,12 @@ func main() {
 		}
 	}
 
-	_, chatsList := database.GetChatsList()
+	tg := telegram.NewTG(githubRepo)
+
+	_, chatsList := githubRepo.GetChatsList()
 	for i := range chatsList {
-		go telegram.Notifier(cfg, chatsList[i])
+		go tg.Notifier(cfg, chatsList[i])
 	}
 
-	telegram.Bot(cfg)
+	tg.Bot(cfg)
 }

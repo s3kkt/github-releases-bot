@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+type TGStruct struct {
+	githubRepo *database.GithubRepos
+}
+
+func NewTG(githubRepo *database.GithubRepos) *TGStruct {
+	return &TGStruct{
+		githubRepo: githubRepo,
+	}
+}
+
 var (
 	// Menu texts
 	firstMenu = "<b>Select GitHub bot action</b>"
@@ -69,7 +79,7 @@ Example: https://github.com/s3kkt/github-releases-bot
 	bot *tgbotapi.BotAPI
 )
 
-func Bot(conf internal.Config) {
+func (r *TGStruct) Bot(conf internal.Config) {
 	var err error
 	bot, err = tgbotapi.NewBotAPI(conf.TelegramToken)
 	if err != nil {
@@ -89,7 +99,7 @@ func Bot(conf internal.Config) {
 	updates := bot.GetUpdatesChan(u)
 
 	// Pass cancellable context to goroutine
-	go receiveUpdates(closed, updates)
+	go r.receiveUpdates(closed, updates)
 
 	// Tell the user the bot is online
 	log.Println("Start listening for updates.")
@@ -102,7 +112,7 @@ func Bot(conf internal.Config) {
 	close(closed)
 }
 
-func receiveUpdates(closed <-chan struct{}, updates tgbotapi.UpdatesChannel) {
+func (r *TGStruct) receiveUpdates(closed <-chan struct{}, updates tgbotapi.UpdatesChannel) {
 	// `for {` means the loop is infinite until we manually stop it
 	for {
 		select {
@@ -111,12 +121,12 @@ func receiveUpdates(closed <-chan struct{}, updates tgbotapi.UpdatesChannel) {
 			return
 		// receive update from channel and then handle it
 		case update := <-updates:
-			handleUpdate(update)
+			r.handleUpdate(update)
 		}
 	}
 }
 
-func handleUpdate(update tgbotapi.Update) {
+func (r *TGStruct) handleUpdate(update tgbotapi.Update) {
 	switch {
 	// Handle messages
 	case update.Message != nil:
@@ -131,22 +141,22 @@ func handleUpdate(update tgbotapi.Update) {
 		//fmt.Printf("DEBUG MESSAGE FIRST NAME:       %+v\n", update.Message.Chat.FirstName)
 		//fmt.Printf("DEBUG MESSAGE TYPE:             %+v\n", update.Message.Chat.Type)
 
-		handleMessage(update.Message, update.Message.ReplyToMessage)
+		r.handleMessage(update.Message, update.Message.ReplyToMessage)
 		break
 	// Handle button clicks
 	case update.CallbackQuery != nil:
-		handleButton(update.CallbackQuery)
+		r.handleButton(update.CallbackQuery)
 
 		break
 	}
 }
 
-func handleMessage(message *tgbotapi.Message, reply *tgbotapi.Message) {
+func (r *TGStruct) handleMessage(message *tgbotapi.Message, reply *tgbotapi.Message) {
 	user := message.From
 	text := message.Text
 	var err error
 
-	err = updateChat(message)
+	err = r.updateChat(message)
 	if err != nil {
 		log.Println(err)
 		return
@@ -161,11 +171,11 @@ func handleMessage(message *tgbotapi.Message, reply *tgbotapi.Message) {
 
 	if strings.HasPrefix(text, "/") {
 		//err = handleCommand(message.Chat.ID, text)
-		err = handleCommand(message, text)
+		err = r.handleCommand(message, text)
 	} else if reply != nil {
 		if reply.Text == addMessageText {
 			if helpers.ValidateRepoUrl(message.Text) == true {
-				database.AddRepo(message.Text, message.Chat.ID)
+				r.githubRepo.AddRepo(message.Text, message.Chat.ID)
 				msg := tgbotapi.NewMessage(message.Chat.ID, "Adding repo: "+message.Text)
 				msg.DisableWebPagePreview = true
 				_, err = bot.Send(msg)
@@ -175,7 +185,7 @@ func handleMessage(message *tgbotapi.Message, reply *tgbotapi.Message) {
 			}
 		} else if reply.Text == deleteMessageText {
 			if helpers.ValidateRepoUrl(message.Text) == true {
-				database.DeleteRepo(message.Text, message.Chat.ID)
+				r.githubRepo.DeleteRepo(message.Text, message.Chat.ID)
 				msg := tgbotapi.NewMessage(message.Chat.ID, "Deleting repo: "+message.Text)
 				msg.DisableWebPagePreview = true
 				_, err = bot.Send(msg)
@@ -194,34 +204,34 @@ func handleMessage(message *tgbotapi.Message, reply *tgbotapi.Message) {
 	}
 }
 
-func handleCommand(message *tgbotapi.Message, command string) error {
+func (r *TGStruct) handleCommand(message *tgbotapi.Message, command string) error {
 	var err error
 
 	switch command {
 	case "/menu":
-		err = sendMenu(message.Chat.ID)
+		err = r.sendMenu(message.Chat.ID)
 		break
 	case "/list":
-		err = listRepos(message.Chat.ID)
+		err = r.listRepos(message.Chat.ID)
 		break
 	case "/add":
-		err = addRepo(message.Chat.ID)
+		err = r.addRepo(message.Chat.ID)
 		break
 	case "/delete":
-		err = deleteRepo(message.Chat.ID)
+		err = r.deleteRepo(message.Chat.ID)
 		break
 	case "/latest":
-		err = listLatest(message.Chat.ID)
+		err = r.listLatest(message.Chat.ID)
 		break
 	case "/help":
-		err = sendHelp(message.Chat.ID)
+		err = r.sendHelp(message.Chat.ID)
 		break
 	}
 
 	return err
 }
 
-func handleButton(query *tgbotapi.CallbackQuery) {
+func (r *TGStruct) handleButton(query *tgbotapi.CallbackQuery) {
 	var text string
 
 	markup := tgbotapi.NewInlineKeyboardMarkup()
@@ -230,7 +240,7 @@ func handleButton(query *tgbotapi.CallbackQuery) {
 	if query.Data == listButton {
 		text = firstMenu
 		markup = firstMenuMarkup
-		err, reposList := database.GetChatReposList(message.Chat.ID)
+		err, reposList := r.githubRepo.GetChatReposList(message.Chat.ID)
 		if err != nil {
 			log.Fatal("Failed to get repos list: %w", err)
 		} else {
@@ -240,7 +250,7 @@ func handleButton(query *tgbotapi.CallbackQuery) {
 		}
 	} else if query.Data == latestButton {
 		text = latestButton
-		err := listLatest(message.Chat.ID)
+		err := r.listLatest(message.Chat.ID)
 		if err != nil {
 			return
 		}
@@ -269,13 +279,13 @@ func handleButton(query *tgbotapi.CallbackQuery) {
 	bot.Send(msg)
 }
 
-func updateChat(message *tgbotapi.Message) error {
+func (r *TGStruct) updateChat(message *tgbotapi.Message) error {
 	date := time.Now().Unix()
-	err := database.UpdateChat(message.Chat.ID, message.Chat.UserName, message.Chat.FirstName, message.Chat.LastName, message.Chat.Type, message.From.IsBot, date)
+	err := r.githubRepo.UpdateChat(message.Chat.ID, message.Chat.UserName, message.Chat.FirstName, message.Chat.LastName, message.Chat.Type, message.From.IsBot, date)
 	return err
 }
 
-func sendMenu(chatId int64) error {
+func (r *TGStruct) sendMenu(chatId int64) error {
 	msg := tgbotapi.NewMessage(chatId, firstMenu)
 	msg.ParseMode = tgbotapi.ModeHTML
 	msg.ReplyMarkup = firstMenuMarkup
@@ -283,8 +293,8 @@ func sendMenu(chatId int64) error {
 	return err
 }
 
-func listRepos(chatId int64) error {
-	err, reposList := database.GetChatReposList(chatId)
+func (r *TGStruct) listRepos(chatId int64) error {
+	err, reposList := r.githubRepo.GetChatReposList(chatId)
 	if err != nil {
 		log.Fatal("Failed to get repos list: %w", err)
 	} else {
@@ -295,8 +305,8 @@ func listRepos(chatId int64) error {
 	return err
 }
 
-func listLatest(chatId int64) error {
-	latestList, err := database.GetChatLatestList(chatId)
+func (r *TGStruct) listLatest(chatId int64) error {
+	latestList, err := r.githubRepo.GetChatLatestList(chatId)
 	if err != nil {
 		log.Fatal("Failed to get latest list: %w", err)
 	} else {
@@ -308,19 +318,19 @@ func listLatest(chatId int64) error {
 	return err
 }
 
-func addRepo(chatId int64) error {
+func (r *TGStruct) addRepo(chatId int64) error {
 	msg := tgbotapi.NewMessage(chatId, addMessageText)
 	_, err := bot.Send(msg)
 	return err
 }
 
-func deleteRepo(chatId int64) error {
+func (r *TGStruct) deleteRepo(chatId int64) error {
 	msg := tgbotapi.NewMessage(chatId, deleteMessageText)
 	_, err := bot.Send(msg)
 	return err
 }
 
-func sendHelp(chatId int64) error {
+func (r *TGStruct) sendHelp(chatId int64) error {
 	msg := tgbotapi.NewMessage(chatId, helpMessageText)
 	msg.ParseMode = tgbotapi.ModeHTML
 	msg.DisableWebPagePreview = true
@@ -328,11 +338,11 @@ func sendHelp(chatId int64) error {
 	return err
 }
 
-func Notifier(conf internal.Config, chatId int64) {
+func (r *TGStruct) Notifier(conf internal.Config, chatId int64) {
 	duration, _ := time.ParseDuration(conf.UpdateInterval)
 	for range time.Tick(duration) {
 		log.Print("Bot notifier: check for updates...")
-		_, reposList := database.GetChatReposList(chatId)
+		_, reposList := r.githubRepo.GetChatReposList(chatId)
 		if len(reposList) == 0 {
 			log.Printf("There is to chats to interact with.")
 			return
@@ -343,17 +353,17 @@ func Notifier(conf internal.Config, chatId int64) {
 				log.Println(err)
 			} else {
 				log.Printf("Checking if %s is new release for %s", release.TagName, repo)
-				ifNew, err := database.CheckIfNew(repo, release.TagName)
+				ifNew, err := r.githubRepo.CheckIfNew(repo, release.TagName)
 				if err != nil {
 					continue
 				} else if ifNew == true {
 
 					log.Printf("%s is new release for %s, inserting data to database.", release.TagName, repo)
 					checkTime := time.Now().Format(time.RFC3339)
-					database.InsertReleaseData(checkTime, repo, release, true)
+					r.githubRepo.InsertReleaseData(checkTime, repo, release, true)
 
 					log.Printf("Try to send updates. Chat ID: %d", chatId)
-					err := sendReleased(chatId, repo, release.TagName, release.HtmlUrl, release.Body)
+					err := r.sendReleased(chatId, repo, release.TagName, release.HtmlUrl, release.Body)
 					if err != nil {
 						log.Printf("Failed to send release update. ChatId: %d. Reason: %s", chatId, err)
 						return
@@ -365,10 +375,10 @@ func Notifier(conf internal.Config, chatId int64) {
 	return
 }
 
-func sendReleased(chatId int64, repoName, tag, url, releaseNotes string) error {
-	r := helpers.SanitizeRepoName(repoName)
-	n := helpers.SanitizeReleaseNotes(releaseNotes)
-	msg := tgbotapi.NewMessage(chatId, "<b>"+r+"</b> released <b>"+tag+"</b>\n\n<b>Link: </b>"+url+"\n\n<b>Notes: </b>\n"+n+"\n<a href='"+url+"'>Read more</a>\n")
+func (r *TGStruct) sendReleased(chatId int64, repoName, tag, url, releaseNotes string) error {
+	repo := helpers.SanitizeRepoName(repoName)
+	note := helpers.SanitizeReleaseNotes(releaseNotes)
+	msg := tgbotapi.NewMessage(chatId, "<b>"+repo+"</b> released <b>"+tag+"</b>\n\n<b>Link: </b>"+url+"\n\n<b>Notes: </b>\n"+note+"\n<a href='"+url+"'>Read more</a>\n")
 	msg.ParseMode = tgbotapi.ModeHTML
 	_, err := bot.Send(msg)
 	return err
