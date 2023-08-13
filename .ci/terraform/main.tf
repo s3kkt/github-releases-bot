@@ -40,6 +40,10 @@ resource "google_sql_database_instance" "instance" {
       name  = "cloudsql.iam_authentication"
       value = "on"
     }
+    database_flags {
+      name  = "max_connections"
+      value = 100
+    }
     ip_configuration {
       ipv4_enabled    = "true"
       private_network = google_compute_network.peering_network.id
