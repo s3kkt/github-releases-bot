@@ -7,7 +7,7 @@ import (
 	"github.com/s3kkt/github-releases-bot/internal"
 	"github.com/s3kkt/github-releases-bot/internal/config"
 	"github.com/s3kkt/github-releases-bot/internal/database"
-	"github.com/s3kkt/github-releases-bot/internal/telegram"
+	"github.com/s3kkt/github-releases-bot/internal/messengers"
 	"log"
 	"net/http"
 	"os"
@@ -77,12 +77,14 @@ func main() {
 		}
 	}
 
-	tg := telegram.NewTG(githubRepo)
+	tg := messengers.NewTG(githubRepo)
+	mm := messengers.NewMM(githubRepo, cfg)
 
 	_, chatsList := githubRepo.GetChatsList()
 	for i := range chatsList {
-		go tg.Notifier(cfg, chatsList[i])
+		go tg.NotifierTg(cfg, chatsList[i])
+		go mm.NotifierMm(cfg, chatsList[i])
 	}
 
-	tg.Bot(cfg)
+	tg.TgBot(cfg)
 }

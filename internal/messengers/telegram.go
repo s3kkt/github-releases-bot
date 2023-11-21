@@ -1,4 +1,4 @@
-package telegram
+package messengers
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -79,7 +79,7 @@ Example: https://github.com/s3kkt/github-releases-bot
 	bot *tgbotapi.BotAPI
 )
 
-func (r *TGStruct) Bot(conf internal.Config) {
+func (r *TGStruct) TgBot(conf internal.Config) {
 	var err error
 	bot, err = tgbotapi.NewBotAPI(conf.TelegramToken)
 	if err != nil {
@@ -338,7 +338,7 @@ func (r *TGStruct) sendHelp(chatId int64) error {
 	return err
 }
 
-func (r *TGStruct) Notifier(conf internal.Config, chatId int64) {
+func (r *TGStruct) NotifierTg(conf internal.Config, chatId int64) {
 	duration, _ := time.ParseDuration(conf.UpdateInterval)
 	for range time.Tick(duration) {
 		log.Print("Bot notifier: check for updates...")

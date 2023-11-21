@@ -2,15 +2,21 @@ package internal
 
 import (
 	_ "github.com/kelseyhightower/envconfig"
+	"net/url"
 	"time"
 )
 
 type Config struct {
-	GitHubToken    string `yaml:"github_token" envconfig:"BOT_GITHUB_TOKEN"`
-	TelegramToken  string `yaml:"telegram_token" envconfig:"BOT_TELEGRAM_TOKEN"`
-	Debug          bool   `yaml:"debug" envconfig:"BOT_DEBUG"`
-	UpdateInterval string `yaml:"update_interval" envconfig:"BOT_UPDATE_INTERVAL"`
-	Database       struct {
+	GitHubToken       string   `yaml:"github_token" envconfig:"BOT_GITHUB_TOKEN"`
+	TelegramToken     string   `yaml:"telegram_token" envconfig:"BOT_TELEGRAM_TOKEN"`
+	MattermostUser    string   `yaml:"mattermost_user" envconfig:"BOT_MATTERMOST_USER"`
+	MattermostTeam    string   `yaml:"mattermost_team" envconfig:"BOT_MATTERMOST_TEAM"`
+	MattermostToken   string   `yaml:"mattermost_token" envconfig:"BOT_MATTERMOST_TOKEN"`
+	MattermostChannel string   `yaml:"mattermost_channel" envconfig:"BOT_MATTERMOST_CHANNEL"`
+	MattermostServer  *url.URL `yaml:"mattermost_server" envconfig:"BOT_MATTERMOST_SERVER"`
+	Debug             bool     `yaml:"debug" envconfig:"BOT_DEBUG"`
+	UpdateInterval    string   `yaml:"update_interval" envconfig:"BOT_UPDATE_INTERVAL"`
+	Database          struct {
 		Username string `yaml:"user" envconfig:"BOT_DB_USER"`
 		Password string `yaml:"pass" envconfig:"BOT_DB_PASS"`
 		Host     string `yaml:"host" envconfig:"BOT_DB_HOST"`
