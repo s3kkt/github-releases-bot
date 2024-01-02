@@ -2,11 +2,11 @@ package telegram
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/s3kkt/github-releases-bot/internal"
 	"github.com/s3kkt/github-releases-bot/internal/database"
 	"github.com/s3kkt/github-releases-bot/internal/helpers"
 	"github.com/s3kkt/github-releases-bot/internal/transport"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -84,7 +84,7 @@ func (r *TGStruct) Bot(conf internal.Config) {
 	bot, err = tgbotapi.NewBotAPI(conf.TelegramToken)
 	if err != nil {
 		// Abort if something is wrong
-		log.Panic(err)
+		zlog.Panic().Msgf("Cannot initialize new bot: %s", err)
 	}
 
 	// Set this to true to log all interactions with telegram servers
@@ -102,7 +102,7 @@ func (r *TGStruct) Bot(conf internal.Config) {
 	go r.receiveUpdates(closed, updates)
 
 	// Tell the user the bot is online
-	log.Println("Start listening for updates.")
+	zlog.Info().Msg("Start listening for updates.")
 
 	// wait for os.Signal, then stop handling updates
 	interrupt := make(chan os.Signal)
@@ -158,7 +158,7 @@ func (r *TGStruct) handleMessage(message *tgbotapi.Message, reply *tgbotapi.Mess
 
 	err = r.updateChat(message)
 	if err != nil {
-		log.Println(err)
+		zlog.Error().Msgf("%s", err)
 		return
 	}
 
@@ -167,10 +167,9 @@ func (r *TGStruct) handleMessage(message *tgbotapi.Message, reply *tgbotapi.Mess
 	}
 
 	// Print user input to console
-	log.Printf("%s(@%s) wrote %s", user.FirstName, user.UserName, text)
+	zlog.Info().Msgf("%s(@%s) wrote %s", user.FirstName, user.UserName, text)
 
 	if strings.HasPrefix(text, "/") {
-		//err = handleCommand(message.Chat.ID, text)
 		err = r.handleCommand(message, text)
 	} else if reply != nil {
 		if reply.Text == addMessageText {
@@ -200,7 +199,7 @@ func (r *TGStruct) handleMessage(message *tgbotapi.Message, reply *tgbotapi.Mess
 	}
 
 	if err != nil {
-		log.Printf("An error occured: %s", err.Error())
+		zlog.Error().Msgf("An error occured: %s", err.Error())
 	}
 }
 
@@ -242,7 +241,7 @@ func (r *TGStruct) handleButton(query *tgbotapi.CallbackQuery) {
 		markup = firstMenuMarkup
 		err, reposList := r.githubRepo.GetChatReposList(message.Chat.ID)
 		if err != nil {
-			log.Fatal("Failed to get repos list: %w", err)
+			zlog.Error().Msgf("Failed to get repos list: %w", err)
 		} else {
 			msg := tgbotapi.NewMessage(message.Chat.ID, helpers.ReposListOutput(reposList))
 			msg.DisableWebPagePreview = true
@@ -296,7 +295,7 @@ func (r *TGStruct) sendMenu(chatId int64) error {
 func (r *TGStruct) listRepos(chatId int64) error {
 	err, reposList := r.githubRepo.GetChatReposList(chatId)
 	if err != nil {
-		log.Fatal("Failed to get repos list: %w", err)
+		zlog.Error().Msgf("Failed to get repos list: %w", err)
 	} else {
 		msg := tgbotapi.NewMessage(chatId, helpers.ReposListOutput(reposList))
 		msg.DisableWebPagePreview = true
@@ -308,7 +307,7 @@ func (r *TGStruct) listRepos(chatId int64) error {
 func (r *TGStruct) listLatest(chatId int64) error {
 	latestList, err := r.githubRepo.GetChatLatestList(chatId)
 	if err != nil {
-		log.Fatal("Failed to get latest list: %w", err)
+		zlog.Error().Msgf("Failed to get latest list: %w", err)
 	} else {
 		msg := tgbotapi.NewMessage(chatId, helpers.LatestListOutput(latestList))
 		msg.ParseMode = tgbotapi.ModeHTML
@@ -341,31 +340,31 @@ func (r *TGStruct) sendHelp(chatId int64) error {
 func (r *TGStruct) Notifier(conf internal.Config, chatId int64) {
 	duration, _ := time.ParseDuration(conf.UpdateInterval)
 	for range time.Tick(duration) {
-		log.Print("Bot notifier: check for updates...")
+		zlog.Info().Msg("Bot notifier: check for updates...")
 		_, reposList := r.githubRepo.GetChatReposList(chatId)
 		if len(reposList) == 0 {
-			log.Printf("There is to chats to interact with.")
+			zlog.Info().Msg("There is to chats to interact with.")
 			return
 		}
 		for _, repo := range reposList {
 			release, err := transport.GetReleases(helpers.GetApiURL(repo), conf.GitHubToken)
 			if err != nil {
-				log.Println(err)
+				zlog.Error().Msgf("Cannot get releases", err)
 			} else {
-				log.Printf("Checking if %s is new release for %s", release.TagName, repo)
+				zlog.Info().Msgf("Checking if %s is new release for %s", release.TagName, repo)
 				ifNew, err := r.githubRepo.CheckIfNew(repo, release.TagName)
 				if err != nil {
 					continue
 				} else if ifNew == true {
 
-					log.Printf("%s is new release for %s, inserting data to database.", release.TagName, repo)
+					zlog.Info().Msgf("%s is new release for %s, inserting data to database.", release.TagName, repo)
 					checkTime := time.Now().Format(time.RFC3339)
 					r.githubRepo.InsertReleaseData(checkTime, repo, release, true)
 
-					log.Printf("Try to send updates. Chat ID: %d", chatId)
+					zlog.Info().Msgf("Try to send updates. Chat ID: %d", chatId)
 					err := r.sendReleased(chatId, repo, release.TagName, release.HtmlUrl, release.Body)
 					if err != nil {
-						log.Printf("Failed to send release update. ChatId: %d. Reason: %s", chatId, err)
+						zlog.Info().Msgf("Failed to send release update. ChatId: %d. Reason: %s", chatId, err)
 						return
 					}
 				}

@@ -2,8 +2,8 @@ package helpers
 
 import (
 	"fmt"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/s3kkt/github-releases-bot/internal"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -15,7 +15,9 @@ func GetApiURL(url string) string {
 
 func ReposListOutput(reposList []string) string {
 	if len(reposList) == 0 {
-		return "There is no repos at this moment."
+		msg := "There is no repos at this moment."
+		zlog.Debug().Msg(msg)
+		return msg
 	}
 	return strings.Join(reposList, "\n")
 }
@@ -28,7 +30,9 @@ func LatestListOutput(latestList []internal.LatestRelease) string {
 	var lenRepo, lenTag int
 
 	if len(latestList) == 0 {
-		return "There is no releases at this moment."
+		msg := "There is no releases at this moment."
+		zlog.Debug().Msg(msg)
+		return msg
 	} else {
 		for _, s := range latestList {
 			re := regexp.MustCompile(`https://github.com/`)
@@ -84,10 +88,10 @@ func LatestListOutput(latestList []internal.LatestRelease) string {
 
 func ValidateRepoUrl(repoUrl string) bool {
 	if strings.HasPrefix(repoUrl, "https://github.com") == true {
-		log.Printf("Repo format validation successful for %s", repoUrl)
+		zlog.Info().Msgf("Repo format validation successful for %s", repoUrl)
 		return true
 	} else {
-		log.Printf("Repo format validation failed for %s. Must be a 'https://github.com/author/repo'", repoUrl)
+		zlog.Error().Msgf("Repo format validation failed for %s. Must be a 'https://github.com/author/repo'", repoUrl)
 		return false
 	}
 }
@@ -95,7 +99,7 @@ func ValidateRepoUrl(repoUrl string) bool {
 func SanitizeRepoName(repo string) string {
 	re, err := regexp.Compile(`https://github.com/`)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Error().Msgf("Repo URL must start with 'https://github.com/', got %s. %s", repo, err)
 	}
 	repo = re.ReplaceAllString(repo, "")
 	return repo
@@ -109,11 +113,12 @@ func SanitizeReleaseNotes(releaseNotes string) string {
 	for r := range unsupportedRegex {
 		re, err := regexp.Compile(unsupportedRegex[r])
 		if err != nil {
-			log.Fatal(err)
+			zlog.Warn().Msg("Release notes contais unsupported symbols.")
 		}
 		releaseNotes = re.ReplaceAllString(releaseNotes, "")
 	}
 	if len(releaseNotes) > 300 {
+		zlog.Warn().Msg("Release notes contais more than 300 symbols. Cutting...")
 		return releaseNotes[:300] + "\n...\n"
 	}
 

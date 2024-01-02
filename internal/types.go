@@ -8,8 +8,9 @@ import (
 type Config struct {
 	GitHubToken    string `yaml:"github_token" envconfig:"BOT_GITHUB_TOKEN"`
 	TelegramToken  string `yaml:"telegram_token" envconfig:"BOT_TELEGRAM_TOKEN"`
-	Debug          bool   `yaml:"debug" envconfig:"BOT_DEBUG"`
+	Debug          bool   `yaml:"bot_debug" envconfig:"BOT_DEBUG"`
 	UpdateInterval string `yaml:"update_interval" envconfig:"BOT_UPDATE_INTERVAL"`
+	LogLevel       string `yaml:"log_level" envconfig:"BOT_LOG_LEVEL"`
 	Database       struct {
 		Username string `yaml:"user" envconfig:"BOT_DB_USER"`
 		Password string `yaml:"pass" envconfig:"BOT_DB_PASS"`
@@ -45,9 +46,4 @@ type LatestRelease struct {
 type APIError struct {
 	Message          string `json:"message"`
 	DocumentationUrl string `json:"documentation_url"`
-}
-
-type LetestList struct {
-	Tag  string `ddb:"tag_name"`
-	Repo int    `ddb:"repo_name"`
 }

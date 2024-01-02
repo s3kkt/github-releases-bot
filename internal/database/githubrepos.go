@@ -9,8 +9,8 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/s3kkt/github-releases-bot/internal"
-	"log"
 )
 
 type GithubRepos struct {
@@ -45,10 +45,10 @@ func (r *GithubRepos) Migrate() error {
 func (r *GithubRepos) CheckDatabaseConnection() bool {
 
 	if err := r.db.Ping(); err != nil {
-		log.Fatal("Database connection failed! Reason: ", err)
+		zlog.Fatal().Msgf("Database connection failed! Reason: ", err)
 	}
 
-	log.Println("Successfully connected to database!")
+	zlog.Info().Msg("Successfully connected to database!")
 	return true
 }
 
@@ -59,9 +59,9 @@ func (r *GithubRepos) UpdateChat(chatId int64, userName, firstName, lastName, ch
     ON CONFLICT (chat_id, username) DO UPDATE SET last_activity = $7;`
 
 	_, err := r.db.Exec(sqlStatement, chatId, userName, firstName, lastName, chatType, isBot, date)
-	log.Printf("Updating chat: %d.", chatId)
+	zlog.Info().Msgf("Updating chat: %d.", chatId)
 	if err != nil {
-		log.Printf("Database chat update failed. ChatID: %d Reason: %s", chatId, err)
+		zlog.Error().Msgf("Database chat update failed. ChatID: %d Reason: %s", chatId, err)
 	}
 
 	return err
@@ -74,10 +74,9 @@ func (r *GithubRepos) AddRepo(repo string, chatId int64) {
     ON CONFLICT (name, chat_id) DO UPDATE SET deleted = false, chat_id = $2;`
 
 	_, err := r.db.Exec(sqlStatement, repo, chatId)
-	log.Printf("Adding repo: %s.", repo)
+	zlog.Info().Msgf("Adding repo: %s.", repo)
 	if err != nil {
-		log.Printf("Failed add repo %s. ChatID: %d Reason: %s", repo, chatId, err)
-		//return
+		zlog.Error().Msgf("Failed add repo %s. ChatID: %d Reason: %s", repo, chatId, err)
 	}
 
 	return
@@ -87,9 +86,9 @@ func (r *GithubRepos) DeleteRepo(repo string, chatId int64) error {
 	sqlStatement := `UPDATE repos SET deleted = true WHERE name = $1 AND chat_id = $2;`
 
 	_, err := r.db.Exec(sqlStatement, repo, chatId)
-	log.Print("Disabling unused repo: ", repo)
+	zlog.Info().Msgf("Disabling unused repo: ", repo)
 	if err != nil {
-		log.Fatal("Repo deleting failed. Reason: ", err)
+		zlog.Error().Msgf("Repo deleting failed. Reason: ", err)
 	}
 
 	return nil
@@ -104,7 +103,7 @@ func (r *GithubRepos) GetChatsList() (error, []int64) {
 
 	rows, err := r.db.Query(sqlStatement)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Err(err)
 	}
 
 	defer rows.Close()
@@ -112,11 +111,13 @@ func (r *GithubRepos) GetChatsList() (error, []int64) {
 	for rows.Next() {
 		var r int64
 		if err := rows.Scan(&r); err != nil {
+			zlog.Err(err)
 			return err, list
 		}
 		list = append(list, r)
 	}
 	if err = rows.Err(); err != nil {
+		zlog.Err(err)
 		return err, list
 	}
 
@@ -129,7 +130,7 @@ func (r *GithubRepos) GetChatReposList(chatId int64) (error, []string) {
 
 	rows, err := r.db.Query(sqlStatement, chatId)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Err(err)
 	}
 
 	defer rows.Close()
@@ -137,11 +138,13 @@ func (r *GithubRepos) GetChatReposList(chatId int64) (error, []string) {
 	for rows.Next() {
 		var r string
 		if err := rows.Scan(&r); err != nil {
+			zlog.Err(err)
 			return err, list
 		}
 		list = append(list, r)
 	}
 	if err = rows.Err(); err != nil {
+		zlog.Err(err)
 		return err, list
 	}
 
@@ -158,13 +161,11 @@ func (r *GithubRepos) GetChatLatestList(chatId int64) ([]internal.LatestRelease,
     FROM releases LEFT JOIN repos ON repos.name = releases.repo_name
     WHERE repos.chat_id = $1 AND latest = true`
 
-	//err = db.Select(&latestReleaseList, "select releases.repo_name, releases.tag_name, releases.published_at from releases left join repos on repos.name = releases.repo_name where repos.chat_id = $1 and latest = true", chatId)
 	err := r.dbx.Select(&latestReleaseList, sqlStatement, chatId)
 	if err != nil {
+		zlog.Err(err)
 		return nil, err
 	}
-	//err = db.Select(&pp, "select repo_name, tag_name, published_at from releases")
-	//log.Printf("DEBUG: latest release for chat %v: %v\n", chatId, latestRelease)
 
 	return latestReleaseList, nil
 }
@@ -211,7 +212,7 @@ func (r *GithubRepos) InsertReleaseData(checkTime, repo string, release internal
 	tx.MustExec("UPDATE releases SET latest = false WHERE repo_name = $1 AND tag_name <> $2", repo, release.TagName)
 	err := tx.Commit()
 	if err != nil {
-		log.Printf("Inserting release data failed. Reason:", err)
+		zlog.Error().Msgf("Inserting release data failed. Reason:", err)
 		return
 	}
 
@@ -232,7 +233,7 @@ func (r *GithubRepos) CheckIfNew(repo, tag string) (bool, error) {
 
 	rows, err := r.dbx.Query(sqlStatement, repo, tag)
 	if err != nil {
-		log.Fatal("Check failed. Reason: ", err)
+		zlog.Error().Msgf("Check failed. Reason: ", err)
 	}
 
 	defer rows.Close()
@@ -242,10 +243,12 @@ func (r *GithubRepos) CheckIfNew(repo, tag string) (bool, error) {
 		if err := rows.Scan(&r); err != nil {
 			newError := fmt.Sprintf("release %s for %s already added to database", tag, repo)
 			e := errors.New(newError)
+			zlog.Info().Err(e)
 			return false, e
 		}
 	}
 	if err = rows.Err(); err != nil {
+		zlog.Error().Err(err)
 		return false, err
 	}
 

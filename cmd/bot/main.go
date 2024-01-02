@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"github.com/heptiolabs/healthcheck"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/s3kkt/github-releases-bot/internal"
 	"github.com/s3kkt/github-releases-bot/internal/config"
 	"github.com/s3kkt/github-releases-bot/internal/database"
 	"github.com/s3kkt/github-releases-bot/internal/telegram"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -29,6 +30,11 @@ func main() {
 	}
 	config.ReadConfigEnv(&cfg)
 
+	logLevel := config.ParseLogLevel(cfg.LogLevel)
+	zerolog.SetGlobalLevel(logLevel)
+
+	zlog.Info().Msg("Starting bot...")
+
 	dbString := config.DatabaseConnectionString(cfg, runInCloud)
 
 	health := healthcheck.NewHandler()
@@ -41,7 +47,7 @@ func main() {
 	go func() {
 		err := http.ListenAndServe("0.0.0.0:8080", health)
 		if err != nil {
-			log.Fatal("Cannot open heathcheck port: ", err)
+			zlog.Fatal().Msgf("Cannot open heathcheck port: ", err)
 		}
 	}()
 
@@ -52,14 +58,14 @@ func main() {
 
 	db, err := sql.Open("postgres", dbString)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Msgf("Cannot connect database: %s", err)
 	}
 
 	defer db.Close()
 
 	dbx, err := sqlx.Open("postgres", dbString)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Msgf("Cannot connect database: %s", err)
 	}
 
 	defer dbx.Close()
@@ -71,9 +77,10 @@ func main() {
 	if dbMigrate == true {
 		err = githubRepo.Migrate()
 		if err != nil {
-			log.Fatalf("Migration failed! Reason: %s", err)
+			zlog.Fatal().Msgf("Migration failed! Reason: %s", err)
 		} else {
-			log.Println("Migrations successfully applied")
+			zlog.Info().Msgf("Migrations successfully applied. Application stopped.")
+			os.Exit(0)
 		}
 	}
 
