@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/rs/zerolog"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/s3kkt/github-releases-bot/internal"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
+	"strings"
 )
 
 func ParseFlags() (string, bool, bool) {
@@ -21,21 +23,40 @@ func ParseFlags() (string, bool, bool) {
 func ReadConfigFile(configPath string, cfg *internal.Config) {
 	f, err := os.Open(configPath)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Msgf("Cannot open config file: %s", err)
 	}
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Msgf("Cannot decode config: %s", err)
 	}
 }
 
 func ReadConfigEnv(cfg *internal.Config) {
 	err := envconfig.Process("", cfg)
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Msgf("Cannot read environment variables: %s", err)
 	}
+}
+
+func ParseLogLevel(level string) zerolog.Level {
+	var l zerolog.Level
+	switch {
+	case strings.EqualFold(level, "debug"):
+		l = 0
+	case strings.EqualFold(level, "info"):
+		l = 1
+	case strings.EqualFold(level, "warn"):
+		l = 2
+	case strings.EqualFold(level, "error"):
+		l = 3
+	case strings.EqualFold(level, "fatal"):
+		l = 4
+	case strings.EqualFold(level, "trace"):
+		l = -1
+	}
+	return l
 }
 
 func DatabaseConnectionString(conf internal.Config, runInCloud bool) string {
